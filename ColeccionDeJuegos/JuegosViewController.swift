@@ -7,15 +7,35 @@
 
 import UIKit
 
-class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIPickerViewDelegate, UIPickerViewDataSource{
+    
+    let categorias = ["Plataforma","Shooters", "MetroidVenia","Casual","Terror"]
+    var currentCategoria:String = ""
+    
+    
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return categorias.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return categorias[row]
+    }
     
     
  
     @IBOutlet weak var JuegoImageView: UIImageView!
     @IBOutlet weak var tituloTextField: UITextField!
+    @IBOutlet weak var descripcionTextField: UITextField!
     
     @IBOutlet weak var agregarActualizarBoton: UIButton!
     @IBOutlet weak var eliminarBoton: UIButton!
+    
+    @IBOutlet weak var categoriasPicker: UIPickerView!
+    
     
     @IBAction func eliminarTapped(_ sender: Any) {
         let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -23,6 +43,7 @@ class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, U
         navigationController?.popViewController(animated: true)
     }
     var imagePicker = UIImagePickerController()
+    let comoboBoxTextField = UITextField()
     var juego:Juego? = nil
     
     @IBAction func agregarTapped(_ sender: Any) {
@@ -30,17 +51,26 @@ class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, U
         if juego != nil {
             juego!.titulo! = tituloTextField.text!
             juego!.imagen = JuegoImageView.image?.jpegData(compressionQuality: 0.5)
+            juego!.descripcion! = descripcionTextField.text!
+            juego!.categoria! = currentCategoria
+            
+            
         }else{
             let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
             let juego = Juego(context: context)
             juego.titulo = tituloTextField.text
             juego.imagen = JuegoImageView.image?.jpegData(compressionQuality:0.50)
+            juego.descripcion = descripcionTextField.text
+            print(currentCategoria)
+            juego.categoria = currentCategoria
         }
         (UIApplication.shared.delegate as! AppDelegate).saveContext()
             navigationController?.popViewController(animated: true)
     }
     
-    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        currentCategoria = categorias[row]
+    }
     
     
     @IBAction func fotosTapped(_ sender: Any) {
@@ -55,15 +85,25 @@ class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, U
     override func viewDidLoad() {
         super.viewDidLoad()
         imagePicker.delegate = self
-        
+        categoriasPicker.dataSource = self
+        categoriasPicker.delegate = self
+        print("editando")
         if juego != nil {
             JuegoImageView.image = UIImage(data: (juego!.imagen!) as Data)
             tituloTextField.text = juego!.titulo
+            descripcionTextField.text = juego!.descripcion
+            let posicion:Int = categorias.firstIndex(of: juego!.categoria!) ?? 0
+            categoriasPicker.selectRow(posicion, inComponent: 0, animated: false)
+
             agregarActualizarBoton.setTitle(
                 "Actualizar", for: .normal)
         }else {
             eliminarBoton.isHidden = true
         }
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(ocultarTeclado))
+        view.addGestureRecognizer(tap)
+        
+        
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -72,15 +112,11 @@ class JuegosViewController: UIViewController, UIImagePickerControllerDelegate, U
         imagePicker.dismiss(animated: true, completion: nil)
         
     }
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    
+    @objc func ocultarTeclado(){
+        view.endEditing(true)
     }
-    */
+
+    
 
 }
